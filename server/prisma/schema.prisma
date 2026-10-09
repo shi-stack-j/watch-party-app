@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  HOST
+  MODERATOR
+  PARTICIPANT
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id              String            @id @default(uuid())
+  email           String            @unique
+  username        String            @unique
+  passwordHash    String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  hostedRooms     Room[]            @relation("HostRelation")
+  participants    RoomParticipant[]
+  chatMessages    ChatMessage[]
+  joinRequests    JoinRequest[]     @relation("RequestUser")
+  decidedRequests JoinRequest[]     @relation("DeciderUser")
+
+  @@index([email])
+  @@index([username])
+}
+
+model Room {
+  id              String            @id @default(uuid())
+  title           String
+  name            String
+  description     String?
+  code            String            @unique
+  inviteCode      String            @unique
+  hostId          String
+  host            User              @relation("HostRelation", fields: [hostId], references: [id], onDelete: Cascade)
+  currentVideoUrl String?
+  isPrivate       Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  participants    RoomParticipant[]
+  chatMessages    ChatMessage[]
+  joinRequests    JoinRequest[]
+
+  @@index([hostId])
+  @@index([code])
+  @@index([inviteCode])
+}
+
+model RoomParticipant {
+  id         String   @id @default(uuid())
+  roomId     String
+  userId     String
+  role       Role     @default(PARTICIPANT)
+  isApproved Boolean  @default(true)
+  joinedAt   DateTime @default(now())
+  room       Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([roomId])
+  @@index([userId])
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  roomId    String
+  senderId  String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
+  @@index([senderId])
+}
+
+model JoinRequest {
+  id        String        @id @default(uuid())
+  roomId    String
+  userId    String
+  status    RequestStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  decidedBy String?
+
+  room    Room  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user    User  @relation("RequestUser", fields: [userId], references: [id], onDelete: Cascade)
+  decider User? @relation("DeciderUser", fields: [decidedBy], references: [id], onDelete: SetNull)
+
+  @@unique([roomId, userId])
+  @@index([roomId, status])
+  @@index([userId])
+}
+
+model Session {
+  session_id String  @id @db.VarChar(128)
+  expires    Int
+  data       String? @db.Text
+}

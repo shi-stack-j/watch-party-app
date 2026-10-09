@@ -1,0 +1,20 @@
+{
+  "name": "youtube-watch-party-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo root for YouTube Watch Party application",
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix client install",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "build:server": "npm --prefix server run build",
+    "build:client": "npm --prefix client run build",
+    "build": "npm run build:client && npm run build:server",
+    "start": "npm --prefix server run start",
+    "type-check": "npm --prefix server run type-check && npm --prefix client run type-check",
+    "lint": "npm run type-check"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
