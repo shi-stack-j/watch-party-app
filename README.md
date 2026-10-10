@@ -4,6 +4,12 @@ A full-stack, production-hardened, real-time synchronized YouTube Watch Party we
 
 ---
 
+## Live Demo
+
+[Open Watch Party Application](https://watch-party-app-ck1v.onrender.com/)
+
+---
+
 ## 1. Project Overview & Key Features
 
 The YouTube Watch Party application enables users to watch YouTube videos together in synchronized real-time rooms with role-based access control, persistent party chat, live emoji reactions, and host approval workflows.
