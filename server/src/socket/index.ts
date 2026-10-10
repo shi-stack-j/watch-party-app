@@ -201,7 +201,19 @@ export const initSocket = (httpServer: HttpServer, sessionStore?: Store): Socket
     socket.on('request_playback_snapshot', async (data: { roomId: string }) => {
       try {
         if (!user?.userId || !data?.roomId) return;
-        const snapshot = await playbackStateService.getSnapshot(data.roomId);
+        const room = await prisma.room.findFirst({
+          where: { OR: [{ id: data.roomId }, { code: data.roomId }, { inviteCode: data.roomId }] },
+        });
+        if (!room) return;
+        const isHost = room.hostId === user.userId;
+        const participant = await prisma.roomParticipant.findUnique({
+          where: { roomId_userId: { roomId: room.id, userId: user.userId } },
+        });
+        if (room.isPrivate && !isHost && (!participant || !participant.isApproved)) {
+          socket.emit('playback_error', { success: false, message: 'Forbidden: Private room video access requires host approval' });
+          return;
+        }
+        const snapshot = await playbackStateService.getSnapshot(room.id);
         socket.emit('playback_snapshot', { success: true, state: snapshot });
       } catch (err: unknown) {
         logger.error('Error fetching playback snapshot:', err instanceof Error ? err.message : String(err));

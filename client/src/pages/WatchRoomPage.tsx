@@ -59,7 +59,8 @@ export const WatchRoomPage: React.FC = () => {
   const [userRequest, setUserRequest] = useState<JoinRequest | null>(null);
   const [isRequestingAccess, setIsRequestingAccess] = useState<boolean>(false);
 
-  const [isCopied, setIsCopied] = useState(false);
+  const [isLinkCopied, setIsLinkCopied] = useState(false);
+  const [isCodeCopied, setIsCodeCopied] = useState(false);
   const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -149,14 +150,9 @@ export const WatchRoomPage: React.FC = () => {
       if (roomRes.success && roomRes.data) {
         setRoom(roomRes.data);
 
-        if (roomRes.data.currentVideoUrl) {
-          const parsed = parseYouTubeUrl(roomRes.data.currentVideoUrl);
-          if (parsed.isValid && parsed.videoId) {
-            setCurrentVideoId(parsed.videoId);
-          }
-        }
-
         const hostStatus = user && roomRes.data.hostId === user.id;
+        let isApprovedMember = Boolean(hostStatus || !roomRes.data.isPrivate);
+
         if (hostStatus) {
           setUserRole('HOST');
           setIsMember(true);
@@ -169,10 +165,20 @@ export const WatchRoomPage: React.FC = () => {
           const currentMember = partRes.data.find((p) => p.userId === user?.id);
           if (currentMember) {
             setUserRole(currentMember.role);
-            setIsMember(Boolean(currentMember.isApproved || hostStatus));
+            isApprovedMember = Boolean(currentMember.isApproved || hostStatus);
+            setIsMember(isApprovedMember);
           } else if (hostStatus) {
             setIsMember(true);
           }
+        }
+
+        if (isApprovedMember && roomRes.data.currentVideoUrl) {
+          const parsed = parseYouTubeUrl(roomRes.data.currentVideoUrl);
+          if (parsed.isValid && parsed.videoId) {
+            setCurrentVideoId(parsed.videoId);
+          }
+        } else {
+          setCurrentVideoId(null);
         }
 
         // Check user request status if not host/approved member
@@ -329,17 +335,30 @@ export const WatchRoomPage: React.FC = () => {
     }
   };
 
-  // Copy invitation link
+  // Copy full invitation link
   const handleCopyLink = () => {
     const codeToCopy = room?.code || roomId;
     const inviteUrl = `${window.location.origin}/room/${codeToCopy}`;
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(inviteUrl);
-      setIsCopied(true);
+      setIsLinkCopied(true);
       addToast('Room invite link copied to clipboard!', 'success');
-      setTimeout(() => setIsCopied(false), 2500);
+      setTimeout(() => setIsLinkCopied(false), 2500);
     } else {
-      addToast(`Invite Code: ${codeToCopy}`, 'info', 'Share Code');
+      addToast(`Invite Link: ${inviteUrl}`, 'info', 'Share Link');
+    }
+  };
+
+  // Copy only room code
+  const handleCopyCode = () => {
+    const codeToCopy = room?.code || roomId || '';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(codeToCopy);
+      setIsCodeCopied(true);
+      addToast('Room code copied to clipboard!', 'success');
+      setTimeout(() => setIsCodeCopied(false), 2500);
+    } else {
+      addToast(`Room Code: ${codeToCopy}`, 'info', 'Share Code');
     }
   };
 
@@ -517,9 +536,18 @@ export const WatchRoomPage: React.FC = () => {
             variant="secondary"
             size="sm"
             onClick={handleCopyLink}
-            leftIcon={isCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+            leftIcon={isLinkCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
           >
-            {isCopied ? 'Copied' : 'Invite Link'}
+            {isLinkCopied ? 'Link Copied' : 'Copy Invite Link'}
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleCopyCode}
+            leftIcon={isCodeCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+          >
+            {isCodeCopied ? 'Code Copied' : 'Copy Room Code'}
           </Button>
 
           {isHost ? (
@@ -636,7 +664,7 @@ export const WatchRoomPage: React.FC = () => {
             {/* Official YouTube IFrame Player */}
             <YouTubePlayer
               ref={playerRef}
-              videoId={currentVideoId}
+              videoId={isMember ? currentVideoId : null}
               onReady={handlePlayerReady}
               onStateChange={handlePlayerStateChange}
             />

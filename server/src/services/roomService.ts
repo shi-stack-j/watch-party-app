@@ -155,6 +155,9 @@ export const getRoomDetails = async (
     throw new AppError('This watch room is private. You must join via invite code.', 403);
   }
 
+  const isApprovedMember = isHost || Boolean(membership && membership.isApproved);
+  const safeVideoUrl = room.isPrivate && !isApprovedMember ? null : room.currentVideoUrl;
+
   return {
     id: room.id,
     title: room.title,
@@ -164,7 +167,7 @@ export const getRoomDetails = async (
     inviteCode: room.inviteCode,
     hostId: room.hostId,
     isPrivate: room.isPrivate,
-    currentVideoUrl: room.currentVideoUrl,
+    currentVideoUrl: safeVideoUrl,
     createdAt: room.createdAt,
     updatedAt: room.updatedAt,
     host: room.host,

@@ -28,16 +28,12 @@ export const Footer: React.FC = () => {
           </ul>
         </div>
 
-        <div className="space-y-2 text-xs">
-          <h4 className="font-semibold text-slate-300 uppercase tracking-wider">System Info</h4>
-          <p className="text-slate-400">Phase 2 Frontend Release</p>
-          <p className="text-slate-400">React + TypeScript + Vite + Tailwind v4</p>
-        </div>
+
       </div>
 
       <div className="max-w-7xl mx-auto px-6 pt-8 mt-8 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2">
         <p>&copy; {new Date().getFullYear()} SyncStream. All rights reserved.</p>
-        <p className="text-slate-400">Production-Grade Frontend Architecture</p>
+        <p className="text-slate-400">Made By Shivam</p>
       </div>
     </footer>
   );
